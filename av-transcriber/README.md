@@ -31,15 +31,60 @@ quick start.
 
 ## Install
 
+**System packages first**, then the tool.
+
 ```bash
-./bin/av-transcribe --setup          # project-local .venv with everything
-pip install openai-whisper static-ffmpeg     # or into an existing env
-brew install whisper-cpp                     # or the whisper.cpp backend
-pip install weasyprint && brew install pango # only for --pdf
+# macOS
+brew install python@3.12 ffmpeg
+
+# Debian / Ubuntu / Mint / WSL  — python3-venv is NOT pulled in by python3
+sudo apt update && sudo apt install -y python3 python3-venv python3-pip ffmpeg
+
+# Fedora / RHEL  (ffmpeg-free covers common containers; RPM Fusion for the full build)
+sudo dnf install -y python3 python3-pip ffmpeg-free
+
+# Arch / Manjaro
+sudo pacman -S --needed python python-pip ffmpeg
 ```
 
-Symlink `bin/av-transcribe` onto your `PATH` if you like; it resolves symlinks
-and finds its own interpreter.
+```bash
+./bin/av-transcribe --setup          # project-local .venv with everything
+```
+
+Then symlink it onto your `PATH` if you like (`~/.local/bin` on Linux); it
+resolves symlinks and finds its own interpreter.
+
+<details>
+<summary><b>Linux / WSL notes that actually bite people</b></summary>
+
+- **PEP 668.** Debian 12+, Ubuntu 24.04+, Fedora, and Arch block pip from
+  writing into the system Python. Use `--setup`; don't reach for
+  `--break-system-packages`.
+- **CPU-only PyTorch.** `pip install openai-whisper` pulls the CUDA wheel by
+  default — several GB wasted if you have no NVIDIA card. Install
+  `pip install torch --index-url https://download.pytorch.org/whl/cpu` **first**.
+- **WSL needs WSL2** (`wsl -l -v` must say `2`), and media should live on the
+  Linux filesystem — reads under `/mnt/c` cross a translation layer and are
+  drastically slower for large video.
+- **WSL + CRLF.** Cloning with Git for Windows yields
+  `bad interpreter: /usr/bin/env bash^M`. Set `core.autocrlf input`, or
+  `dos2unix bin/av-transcribe examples/*.sh`.
+- **WSL + NVIDIA.** Driver goes on the Windows side *only*; the CUDA runtime
+  ships inside the PyTorch wheel. Then `--device cuda`.
+- **WSL memory.** WSL2 caps near half your host RAM; `large-v3` wants ~6 GB. A
+  bare `Killed` is the OOM killer — raise it in `.wslconfig`.
+- **whisper.cpp** has no Linux package; build it with `cmake -B build && cmake
+  --build build -j` (add `-DGGML_CUDA=1` for NVIDIA).
+
+[README.txt §3](README.txt) has the full per-platform walkthrough.
+</details>
+
+Optional extras:
+
+```bash
+brew install whisper-cpp                     # whisper.cpp backend (macOS)
+pip install weasyprint && brew install pango # --pdf; on Linux: libpango-1.0-0 libpangoft2-1.0-0
+```
 
 ## Usage
 
@@ -95,5 +140,18 @@ print(written["txt"])
 
 ## License
 
-No license chosen yet — add a `LICENSE` file before distributing. See
-README.txt §19.
+Copyright © 2026 Patrick R. Wallace, Hamilton College.
+
+- **Software** — GNU General Public License, version 3 or later
+  (`SPDX-License-Identifier: GPL-3.0-or-later`). Full text in
+  [COPYING](COPYING).
+- **Documentation** — GNU Free Documentation License, version 1.3 or later,
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts
+  (`SPDX-License-Identifier: GFDL-1.3-or-later`). Full text in
+  [COPYING.DOC](COPYING.DOC).
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See [LICENSE.txt](LICENSE.txt) for the summary,
+including third-party component terms, and [README.txt §19](README.txt) for
+the long form.

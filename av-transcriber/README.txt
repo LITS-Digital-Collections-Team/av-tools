@@ -1,6 +1,10 @@
 ===============================================================================
 av-transcriber 1.0.0
 Rip, normalize, and transcribe audio from any audio or video file.
+
+Copyright (C) 2026 Patrick R. Wallace, Hamilton College.
+Software: GNU GPL v3 or later.  Documentation: GNU FDL v1.3 or later.
+See section 19.
 ===============================================================================
 
 One command in, a plaintext transcript out. Everything runs locally: no API
@@ -20,7 +24,7 @@ CONTENTS
 
   1.  Why the extra steps
   2.  Requirements
-  3.  Installation
+  3.  Installation (macOS, Linux, WSL)
   4.  Quick start
   5.  Worked example
   6.  Command reference
@@ -74,65 +78,290 @@ the tool detects that and moves on to a working build.
   * One Whisper backend:
       - openai-whisper (Python; pulls in PyTorch, which is most of the
         install size), or
-      - whisper.cpp, providing a `whisper-cli` binary (Metal-accelerated on
-        Apple silicon, much smaller install).
+      - whisper.cpp, providing a `whisper-cli` binary (GPU-accelerated via
+        Metal on Apple silicon or CUDA on NVIDIA; much smaller install).
   * Optional, only for --pdf: WeasyPrint plus its native Pango/GLib libraries.
 
-Tested on macOS (Apple silicon and Intel) and Linux. The bin/av-transcribe
-launcher is bash; on Windows, call av_transcriber.py directly with a Python
-interpreter that has Whisper installed.
+PLATFORM SUPPORT
+
+  macOS            Apple silicon and Intel. Tested.
+  Linux            Debian/Ubuntu, Fedora/RHEL, Arch. Tested on Debian-family.
+  Windows via WSL  Supported; this is the recommended way to run on Windows.
+  Windows native   The bin/av-transcribe launcher is bash, so it does not run.
+                   Call av_transcriber.py directly with a Python interpreter
+                   that has Whisper installed. Everything except the launcher
+                   is portable.
+
+Disk space is the thing people underestimate. A venv with the Python backend
+is roughly 3-7 GB depending on whether you get a CPU-only or CUDA build of
+PyTorch, before any Whisper model weights (75 MB for tiny up to 3 GB for
+large-v3). The whisper.cpp backend is a few tens of MB plus the model.
 
 
 -------------------------------------------------------------------------------
 3. INSTALLATION
 -------------------------------------------------------------------------------
 
-Self-contained project venv (recommended):
+Install the system packages for your platform first, then pick a backend.
 
+  3.1  macOS
+  3.2  Linux: Debian, Ubuntu, Linux Mint, Raspberry Pi OS
+  3.3  Linux: Fedora, RHEL, Rocky, Alma
+  3.4  Linux: Arch, Manjaro
+  3.5  Windows Subsystem for Linux (WSL)
+  3.6  Installing av-transcriber itself
+  3.7  Choosing and installing a backend
+  3.8  Optional: PDF output
+  3.9  How the launcher finds an interpreter
+  3.10 Putting it on your PATH
+
+
+3.1 MACOS
+
+Homebrew:
+
+    brew install python@3.12 ffmpeg
+
+If you would rather not manage a system ffmpeg, skip it here -- the pip
+package static-ffmpeg in section 3.6 covers it.
+
+
+3.2 LINUX: DEBIAN, UBUNTU, LINUX MINT, RASPBERRY PI OS
+
+    sudo apt update
+    sudo apt install -y python3 python3-venv python3-pip ffmpeg
+
+python3-venv is a separate package on Debian and Ubuntu and is NOT pulled in
+by python3. Without it, `./bin/av-transcribe --setup` fails with a message
+about ensurepip being unavailable. Install it up front.
+
+On Debian 12 and Ubuntu 24.04 and newer, pip refuses to install into the
+system Python (PEP 668, "externally-managed-environment"). Use the project
+venv in section 3.6; do not reach for --break-system-packages.
+
+
+3.3 LINUX: FEDORA, RHEL, ROCKY, ALMA
+
+    sudo dnf install -y python3 python3-pip
+
+Fedora ships a patent-encumbered-codec-free build as `ffmpeg-free`, which is
+enough for common containers:
+
+    sudo dnf install -y ffmpeg-free
+
+For the full build, enable RPM Fusion first:
+
+    sudo dnf install -y \
+      https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+    sudo dnf install -y ffmpeg
+
+On RHEL and its rebuilds, enable EPEL and RPM Fusion, or just use the pip
+package static-ffmpeg in section 3.6 and skip the system ffmpeg entirely.
+
+
+3.4 LINUX: ARCH, MANJARO
+
+    sudo pacman -S --needed python python-pip ffmpeg
+
+Arch does not ship a separate venv package; `python -m venv` works out of the
+box. Arch also enforces PEP 668, so use the project venv.
+
+
+3.5 WINDOWS SUBSYSTEM FOR LINUX (WSL)
+
+WSL2 is required -- WSL1 lacks the kernel features PyTorch expects. From an
+Administrator PowerShell on Windows 10 21H2+ or Windows 11:
+
+    wsl --install -d Ubuntu
+
+Confirm you are on version 2:
+
+    wsl -l -v            # the VERSION column must say 2
+
+Then open the Ubuntu shell and follow section 3.2 exactly -- inside WSL this
+is ordinary Ubuntu. The five things below are WSL-specific and all of them
+bite people.
+
+KEEP MEDIA ON THE LINUX FILESYSTEM. Your Windows drives are mounted under
+/mnt/c, /mnt/d, and so on, but every read crosses a filesystem translation
+layer and is dramatically slower than native. For a multi-gigabyte video that
+is the difference between seconds and minutes just to decode. Copy the file
+into your Linux home directory first:
+
+    cp /mnt/c/Users/YourName/Videos/lecture.mp4 ~/
+    av-transcribe ~/lecture.mp4
+
+If you must read in place, at least write the output to the Linux side:
+
+    av-transcribe /mnt/c/Users/YourName/Videos/lecture.mp4 -o ~/transcripts
+
+FIX LINE ENDINGS IF YOU CLONED ON WINDOWS. Git for Windows converts files to
+CRLF by default. A shell script with CRLF line endings fails with
+
+    bad interpreter: /usr/bin/env bash^M: no such file or directory
+
+Clone inside WSL instead, or repair it:
+
+    git config --global core.autocrlf input     # before cloning
+    sudo apt install -y dos2unix                # to fix an existing checkout
+    dos2unix bin/av-transcribe examples/*.sh
+
+NVIDIA GPU WORKS, WITH ONE RULE. Install the NVIDIA driver on the WINDOWS
+side only. Do not install a Linux GPU driver inside WSL -- that breaks the
+passthrough. The CUDA runtime comes bundled in the PyTorch wheel, so no CUDA
+toolkit is needed. Verify inside WSL:
+
+    nvidia-smi
+    python3 -c "import torch; print(torch.cuda.is_available())"
+
+Then run with --device cuda. See section 3.7.
+
+RAISE THE MEMORY LIMIT FOR LARGE MODELS. WSL2 caps itself at about half your
+host RAM. large-v3 wants roughly 6 GB free. If a run is killed abruptly with
+no Python traceback, that is the out-of-memory killer. Create
+C:\Users\YourName\.wslconfig on the Windows side:
+
+    [wsl2]
+    memory=12GB
+
+then `wsl --shutdown` in PowerShell and reopen the shell.
+
+YOU DO NOT NEED AUDIO IN WSL. av-transcriber never plays anything; it only
+decodes. Do not waste time configuring PulseAudio.
+
+
+3.6 INSTALLING AV-TRANSCRIBER ITSELF
+
+Self-contained project venv, the recommended path on every platform:
+
+    git clone <repository-url> av-transcriber
+    cd av-transcriber
     ./bin/av-transcribe --setup
 
-That creates .venv/ next to the tool and installs requirements.txt into it.
-Expect a few GB, almost all of it PyTorch.
+That creates .venv/ next to the tool and installs requirements.txt into it,
+including static-ffmpeg, so you get working ffmpeg binaries even if the
+system has none.
 
-Into an environment you already have:
+Into an environment you already manage:
 
     pip install openai-whisper static-ffmpeg
 
-The whisper.cpp backend instead, if you want a small install or GPU
-acceleration on Apple silicon:
+Drop static-ffmpeg if you installed a system ffmpeg above and would rather
+use it.
+
+
+3.7 CHOOSING AND INSTALLING A BACKEND
+
+PYTHON BACKEND, CPU ONLY (Linux and WSL)
+
+On Linux, `pip install openai-whisper` pulls the default PyTorch wheel, which
+bundles the full CUDA stack and costs several gigabytes -- wasted if you have
+no NVIDIA card. Install the CPU build first so pip is already satisfied:
+
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
+    pip install openai-whisper
+
+Order matters. Do this before openai-whisper, not after.
+
+PYTHON BACKEND, NVIDIA GPU (Linux and WSL)
+
+The default wheel is what you want, so the plain install is correct:
+
+    pip install openai-whisper
+
+Check the card is visible, then pass --device cuda:
+
+    python3 -c "import torch; print(torch.cuda.is_available())"
+    av-transcribe lecture.mp4 --device cuda -m large-v3
+
+WHISPER.CPP BACKEND
+
+Smaller install, no PyTorch, and it is the only way to use the GPU on Apple
+silicon. On macOS:
 
     brew install whisper-cpp
+
+On Linux and WSL there is no package; build it, which takes a minute or two:
+
+    sudo apt install -y build-essential cmake git        # or dnf/pacman equiv.
+    git clone https://github.com/ggml-org/whisper.cpp
+    cd whisper.cpp
+    cmake -B build                  # add -DGGML_CUDA=1 for an NVIDIA GPU
+    cmake --build build -j --config Release
+
+That produces build/bin/whisper-cli. Put it on your PATH:
+
+    sudo install -m 755 build/bin/whisper-cli /usr/local/bin/
+
+Consult the whisper.cpp README for the current accelerator flags; they have
+changed names across releases.
+
+Then fetch a model. av-transcriber looks in ~/.cache/whisper-cpp first:
+
     mkdir -p ~/.cache/whisper-cpp
     curl -L -o ~/.cache/whisper-cpp/ggml-large-v3-turbo.bin \
       https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin
 
-PDF output, which is optional:
+whisper.cpp's own download script puts models in its models/ directory
+instead; point WHISPER_CPP_MODEL at one rather than moving it if you prefer:
+
+    ./models/download-ggml-model.sh large-v3-turbo
+    export WHISPER_CPP_MODEL=$PWD/models/ggml-large-v3-turbo.bin
+
+
+3.8 OPTIONAL: PDF OUTPUT
+
+--pdf needs WeasyPrint and its native Pango/GLib libraries.
 
     pip install weasyprint
-    brew install pango                              # macOS
-    apt install libpango-1.0-0 libpangoft2-1.0-0    # Debian/Ubuntu
 
-HOW THE LAUNCHER FINDS AN INTERPRETER
+    # then the native libraries, per platform:
+    brew install pango                                        # macOS
+    sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0      # Debian/Ubuntu
+    sudo dnf install -y pango                                 # Fedora/RHEL
+    sudo pacman -S --needed pango                             # Arch
 
-bin/av-transcribe looks for a Python that can `import whisper`, in this order:
+On Debian and Ubuntu, if the pip install itself fails to build, add the
+headers it compiles against:
+
+    sudo apt install -y libffi-dev libjpeg-dev python3-dev
+
+Nothing extra is needed on Linux at run time -- the dynamic loader finds
+these on its own. The DYLD_FALLBACK_LIBRARY_PATH workaround in the launcher
+is macOS-only and is a no-op elsewhere.
+
+
+3.9 HOW THE LAUNCHER FINDS AN INTERPRETER
+
+bin/av-transcribe looks for a Python that can `import whisper`, in this
+order:
 
     1. $AV_TRANSCRIBER_PYTHON
     2. a .venv/ beside the tool, or in any parent directory (up to 5 levels)
     3. python3 on PATH
 
 If none of them has Whisper it uses the best interpreter it found anyway, so
-the Python layer can print its own install instructions or fall through to the
-whisper.cpp backend.
+the Python layer can print its own install instructions or fall through to
+the whisper.cpp backend.
 
-The launcher also extends DYLD_FALLBACK_LIBRARY_PATH on macOS so WeasyPrint can
-find Homebrew's Pango. Use the launcher rather than calling av_transcriber.py
-directly when producing PDFs.
+The launcher also extends DYLD_FALLBACK_LIBRARY_PATH on macOS so WeasyPrint
+can find Homebrew's Pango. Use the launcher rather than calling
+av_transcriber.py directly when producing PDFs.
 
-PUTTING IT ON YOUR PATH
+
+3.10 PUTTING IT ON YOUR PATH
 
     ln -s "$PWD/bin/av-transcribe" /usr/local/bin/av-transcribe
 
-The launcher resolves symlinks, so the tool can live anywhere.
+On a system where /usr/local/bin is not writable or not on PATH, use your
+user bin directory instead:
+
+    mkdir -p ~/.local/bin
+    ln -s "$PWD/bin/av-transcribe" ~/.local/bin/av-transcribe
+
+~/.local/bin is already on PATH on most Linux distributions; if it is not,
+add it in ~/.bashrc. The launcher resolves symlinks, so the tool can live
+anywhere.
 
 
 -------------------------------------------------------------------------------
@@ -629,11 +858,43 @@ including on failure, unless --keep-audio is given.
         curl -L -o ~/.cache/whisper-cpp/ggml-large-v3-turbo.bin \
           https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin
 
+"ensurepip is not available" / "python3-venv" during --setup   [Debian/Ubuntu]
+    python3-venv is a separate package and is not a dependency of python3.
+    `sudo apt install -y python3-venv`, then rerun --setup.
+
+"error: externally-managed-environment" from pip   [Linux]
+    Debian 12+, Ubuntu 24.04+, Fedora, and Arch all block pip from writing
+    into the system Python (PEP 668). Use the project venv:
+    `./bin/av-transcribe --setup`. Do not pass --break-system-packages.
+
+"bad interpreter: /usr/bin/env bash^M"   [WSL]
+    The checkout has Windows CRLF line endings, from cloning with Git for
+    Windows. `sudo apt install -y dos2unix && dos2unix bin/av-transcribe
+    examples/*.sh`, or clone again from inside WSL with
+    `git config --global core.autocrlf input` set first.
+
+"Killed" with no traceback   [WSL, or any low-memory Linux]
+    The kernel out-of-memory killer. WSL2 caps itself near half your host
+    RAM and large-v3 wants about 6 GB. Raise it in .wslconfig (section 3.5),
+    or use a smaller --model, or switch to --backend whisper-cpp, which uses
+    far less memory.
+
+Everything is slow, and the file is on a Windows drive   [WSL]
+    Reads under /mnt/c cross a translation layer. Copy the media into your
+    Linux home directory first; see section 3.5.
+
+torch.cuda.is_available() is False   [Linux/WSL with an NVIDIA card]
+    Either you installed the CPU-only PyTorch wheel (reinstall without the
+    /whl/cpu index URL), or the driver is not visible -- check `nvidia-smi`.
+    Under WSL the driver belongs on the Windows side only; installing a
+    Linux GPU driver inside WSL breaks the passthrough.
+
 "WeasyPrint could not load its native libraries"
-    Install Pango: `brew install pango`, or
-    `apt install libpango-1.0-0 libpangoft2-1.0-0`. On macOS those live
-    outside the dynamic loader's search path, so run the tool through
-    bin/av-transcribe, which extends DYLD_FALLBACK_LIBRARY_PATH for you.
+    Install Pango for your platform; see section 3.8. On macOS those
+    libraries live outside the dynamic loader's search path, so run the tool
+    through bin/av-transcribe, which extends DYLD_FALLBACK_LIBRARY_PATH for
+    you. On Linux no such workaround is needed -- a missing library there
+    means the package is genuinely not installed.
 
 "already exists: NAME (use --overwrite to replace)"
     Working as intended -- the check runs before transcription so you do not
@@ -653,6 +914,14 @@ Apple silicon GPU is not being used
     The Python backend deliberately runs on CPU: Whisper's decoder hits
     unimplemented MPS operations. For GPU acceleration use
     --backend whisper-cpp, which uses Metal.
+
+examples/make-sample-input.sh does not run   [Linux/WSL]
+    It uses the macOS `say` command for text-to-speech. The committed sample
+    audio works everywhere; you only need this script to regenerate it. On
+    Linux, substitute espeak-ng:
+        sudo apt install -y espeak-ng
+        espeak-ng -f examples/sample-script.txt -w /tmp/raw.wav
+    then feed /tmp/raw.wav to the same ffmpeg command in that script.
 
 Very long files
     Memory use is dominated by the model, not the audio, so hours-long inputs
@@ -687,6 +956,9 @@ can disclose a directory structure if you publish it.
     requirements.txt           pip dependencies
     README.txt                 this file
     README.md                  short quick-start, points here
+    LICENSE.txt                licensing summary for the whole project
+    COPYING                    GNU General Public License v3 (the software)
+    COPYING.DOC                GNU Free Documentation License v1.3 (the docs)
     examples/
       sample-script.txt        the text the sample audio was read from
       2026-03-14_...m4a        sample input (synthesized, quiet on purpose)
@@ -699,11 +971,66 @@ can disclose a directory structure if you publish it.
 19. LICENSE
 -------------------------------------------------------------------------------
 
-No license has been chosen yet. Add a LICENSE file before distributing:
-without one, default copyright applies and recipients have no right to use or
-redistribute the code. MIT or Apache-2.0 are the usual choices for a tool like
-this.
+Copyright (C) 2026 Patrick R. Wallace, Hamilton College.
 
-Note that the dependencies carry their own terms -- openai-whisper is MIT,
-whisper.cpp is MIT, ffmpeg is LGPL or GPL depending on the build, and
-WeasyPrint is BSD-3-Clause.
+THE SOFTWARE
+
+av_transcriber.py, bin/av-transcribe, and the scripts under examples/ are
+free software: you can redistribute them and/or modify them under the terms
+of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program, in the file COPYING. If not, see
+<https://www.gnu.org/licenses/>.
+
+    SPDX-License-Identifier: GPL-3.0-or-later
+
+THE DOCUMENTATION
+
+Permission is granted to copy, distribute and/or modify this document and the
+other documentation in this project under the terms of the GNU Free
+Documentation License, Version 1.3 or any later version published by the Free
+Software Foundation; with no Invariant Sections, no Front-Cover Texts, and no
+Back-Cover Texts. A copy of the license is included in the file COPYING.DOC.
+
+    SPDX-License-Identifier: GFDL-1.3-or-later
+
+The GFDL recommends that nontrivial program code appearing in documentation
+be released in parallel under a free software license. The command lines and
+code fragments quoted here are therefore also available under the GPL,
+version 3 or later, at your option.
+
+THE EXAMPLE MATERIAL
+
+examples/sample-script.txt, the audio synthesized from it, and the
+transcripts under examples/output/ are covered by the documentation license
+above. The sample is synthesized speech from a script written for this
+project; it records no real person and no real meeting.
+
+THIRD-PARTY COMPONENTS
+
+av-transcriber neither bundles nor links any of these. It invokes them at
+run time, so their terms govern your installation rather than this source
+tree.
+
+    openai-whisper      MIT
+    PyTorch             BSD-3-Clause
+    whisper.cpp         MIT
+    ffmpeg / ffprobe    LGPL-2.1-or-later, or GPL-2.0-or-later depending on
+                        how the build was configured. Invoked as a separate
+                        process, never linked.
+    static-ffmpeg       Ships prebuilt ffmpeg binaries; see that package for
+                        the terms of the specific build it installs.
+    WeasyPrint          BSD-3-Clause (optional, only for --pdf)
+
+Whisper model weights are distributed by their publishers under their own
+terms and are downloaded by you, not shipped here.
+
+See LICENSE.txt for the same information in one place.
