@@ -1,0 +1,10 @@
+# Whisper (Python backend). Pulls in torch, which is the bulk of the install.
+openai-whisper>=20240930
+
+# Self-contained ffmpeg/ffprobe builds, used automatically when the system
+# ffmpeg is missing or broken. Drop this line if you rely on a system ffmpeg.
+static-ffmpeg>=2.5
+
+# Optional: only needed for --pdf output. Requires native Pango/GLib
+# (`brew install pango`, or `apt install libpango-1.0-0 libpangoft2-1.0-0`).
+weasyprint>=62

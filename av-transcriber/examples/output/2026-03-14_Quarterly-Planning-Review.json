@@ -1,0 +1,83 @@
+{
+  "source": "2026-03-14_Quarterly-Planning-Review.m4a",
+  "duration": 45.538005,
+  "language": "en",
+  "backend": "openai-whisper",
+  "model": "small",
+  "meta": {
+    "device": "cpu"
+  },
+  "text": "Good morning, and thanks for joining the quarterly planning review. I want to start with the archive digitization project. We finished the pilot last month. 1400 reels were inspected, and about 900 of them are in good enough condition to run through the transfer station without any baking. The second item is the transcription backlog. We have roughly 600 hours of board meetings and public lectures sitting on hard drives. Once the loudness normalization step is in place, the automated pass should handle most of it overnight. Last thing, Dana asked whether we can publish captions alongside the video. The answer is yes, the pipeline already emits subtitle files, so it is a matter of wiring them into the player. Let us pick this back up in two weeks. Thanks, everyone.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.56,
+      "text": "Good morning, and thanks for joining the quarterly planning review."
+    },
+    {
+      "start": 3.56,
+      "end": 6.88,
+      "text": "I want to start with the archive digitization project."
+    },
+    {
+      "start": 6.88,
+      "end": 9.04,
+      "text": "We finished the pilot last month."
+    },
+    {
+      "start": 9.04,
+      "end": 14.04,
+      "text": "1400 reels were inspected, and about 900 of them are in good enough condition to run"
+    },
+    {
+      "start": 14.04,
+      "end": 16.84,
+      "text": "through the transfer station without any baking."
+    },
+    {
+      "start": 16.84,
+      "end": 19.48,
+      "text": "The second item is the transcription backlog."
+    },
+    {
+      "start": 19.48,
+      "end": 24.64,
+      "text": "We have roughly 600 hours of board meetings and public lectures sitting on hard drives."
+    },
+    {
+      "start": 24.64,
+      "end": 29.24,
+      "text": "Once the loudness normalization step is in place, the automated pass should handle most"
+    },
+    {
+      "start": 29.24,
+      "end": 30.6,
+      "text": "of it overnight."
+    },
+    {
+      "start": 30.6,
+      "end": 34.96,
+      "text": "Last thing, Dana asked whether we can publish captions alongside the video."
+    },
+    {
+      "start": 34.96,
+      "end": 40.48,
+      "text": "The answer is yes, the pipeline already emits subtitle files, so it is a matter of wiring"
+    },
+    {
+      "start": 40.48,
+      "end": 41.84,
+      "text": "them into the player."
+    },
+    {
+      "start": 41.84,
+      "end": 44.0,
+      "text": "Let us pick this back up in two weeks."
+    },
+    {
+      "start": 44.0,
+      "end": 45.52,
+      "text": "Thanks, everyone."
+    }
+  ]
+}

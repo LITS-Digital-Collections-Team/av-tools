@@ -1,0 +1,14 @@
+[0:00] Good morning, and thanks for joining the quarterly planning review.
+[0:04] I want to start with the archive digitization project.
+[0:07] We finished the pilot last month.
+[0:09] 1400 reels were inspected, and about 900 of them are in good enough condition to run
+[0:14] through the transfer station without any baking.
+[0:17] The second item is the transcription backlog.
+[0:19] We have roughly 600 hours of board meetings and public lectures sitting on hard drives.
+[0:25] Once the loudness normalization step is in place, the automated pass should handle most
+[0:29] of it overnight.
+[0:31] Last thing, Dana asked whether we can publish captions alongside the video.
+[0:35] The answer is yes, the pipeline already emits subtitle files, so it is a matter of wiring
+[0:40] them into the player.
+[0:42] Let us pick this back up in two weeks.
+[0:44] Thanks, everyone.

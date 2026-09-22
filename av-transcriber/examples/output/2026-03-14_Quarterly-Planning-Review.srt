@@ -1,0 +1,55 @@
+1
+00:00:00,000 --> 00:00:03,560
+Good morning, and thanks for joining the quarterly planning review.
+
+2
+00:00:03,560 --> 00:00:06,880
+I want to start with the archive digitization project.
+
+3
+00:00:06,880 --> 00:00:09,040
+We finished the pilot last month.
+
+4
+00:00:09,040 --> 00:00:14,040
+1400 reels were inspected, and about 900 of them are in good enough condition to run
+
+5
+00:00:14,040 --> 00:00:16,840
+through the transfer station without any baking.
+
+6
+00:00:16,840 --> 00:00:19,480
+The second item is the transcription backlog.
+
+7
+00:00:19,480 --> 00:00:24,640
+We have roughly 600 hours of board meetings and public lectures sitting on hard drives.
+
+8
+00:00:24,640 --> 00:00:29,240
+Once the loudness normalization step is in place, the automated pass should handle most
+
+9
+00:00:29,240 --> 00:00:30,600
+of it overnight.
+
+10
+00:00:30,600 --> 00:00:34,960
+Last thing, Dana asked whether we can publish captions alongside the video.
+
+11
+00:00:34,960 --> 00:00:40,480
+The answer is yes, the pipeline already emits subtitle files, so it is a matter of wiring
+
+12
+00:00:40,480 --> 00:00:41,840
+them into the player.
+
+13
+00:00:41,840 --> 00:00:44,000
+Let us pick this back up in two weeks.
+
+14
+00:00:44,000 --> 00:00:45,520
+Thanks, everyone.

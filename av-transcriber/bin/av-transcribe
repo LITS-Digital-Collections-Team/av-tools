@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# av-transcribe -- launcher for av_transcriber.py
+#
+# Finds an interpreter that has Whisper available, then forwards every argument
+# to the Python CLI. Resolution order:
+#   1. $AV_TRANSCRIBER_PYTHON
+#   2. a .venv/ next to this tool, or in any parent directory (up to 4 levels)
+#   3. python3 on PATH
+#
+# On macOS it also extends DYLD_FALLBACK_LIBRARY_PATH so WeasyPrint (--pdf) can
+# find Homebrew's Pango/GLib.
+#
+# `av-transcribe --setup` creates ./.venv and installs the dependencies.
+
+set -euo pipefail
+
+# Resolve this script through symlinks so the tool can live on $PATH.
+target="${BASH_SOURCE[0]}"
+while [ -L "$target" ]; do
+  dir="$(cd -P "$(dirname "$target")" && pwd)"
+  target="$(readlink "$target")"
+  [[ $target != /* ]] && target="$dir/$target"
+done
+BIN_DIR="$(cd -P "$(dirname "$target")" && pwd)"
+PROJECT_DIR="$(dirname "$BIN_DIR")"
+ENTRY="$PROJECT_DIR/av_transcriber.py"
+
+die() { printf 'av-transcribe: %s\n' "$*" >&2; exit 1; }
+
+has_whisper() {
+  "$1" -c 'import whisper' >/dev/null 2>&1
+}
+
+find_python() {
+  if [ -n "${AV_TRANSCRIBER_PYTHON:-}" ]; then
+    [ -x "$AV_TRANSCRIBER_PYTHON" ] || die "AV_TRANSCRIBER_PYTHON is not executable: $AV_TRANSCRIBER_PYTHON"
+    printf '%s\n' "$AV_TRANSCRIBER_PYTHON"; return
+  fi
+
+  local dir="$PROJECT_DIR" fallback="" candidate
+  for _ in 1 2 3 4 5; do
+    candidate="$dir/.venv/bin/python3"
+    if [ -x "$candidate" ]; then
+      if has_whisper "$candidate"; then printf '%s\n' "$candidate"; return; fi
+      [ -z "$fallback" ] && fallback="$candidate"
+    fi
+    dir="$(dirname "$dir")"
+    [ "$dir" = "/" ] && break
+  done
+
+  candidate="$(command -v python3 || true)"
+  if [ -n "$candidate" ] && has_whisper "$candidate"; then printf '%s\n' "$candidate"; return; fi
+
+  # Nothing has whisper: hand back the best interpreter we saw so the Python
+  # layer can print its own install instructions (or use the whisper.cpp path).
+  printf '%s\n' "${fallback:-${candidate:-}}"
+}
+
+setup() {
+  local py
+  py="$(command -v python3)" || die "python3 not found"
+  echo "Creating venv at $PROJECT_DIR/.venv"
+  "$py" -m venv "$PROJECT_DIR/.venv"
+  "$PROJECT_DIR/.venv/bin/pip" install --upgrade pip
+  "$PROJECT_DIR/.venv/bin/pip" install -r "$PROJECT_DIR/requirements.txt"
+  echo "Done. Run: $BIN_DIR/av-transcribe <file>"
+}
+
+[ "${1:-}" = "--setup" ] && { setup; exit 0; }
+
+[ -f "$ENTRY" ] || die "cannot find av_transcriber.py at $ENTRY"
+
+# WeasyPrint (--pdf) dlopens Pango/GLib at import time. Homebrew installs those
+# outside the dynamic loader's default search path, so extend it here -- it has
+# to be set before the interpreter starts, which is exactly what a launcher is
+# for. Setting the variable replaces the built-in fallback list, so restate it.
+if [ "$(uname -s)" = "Darwin" ]; then
+  extra=""
+  for libdir in /opt/homebrew/lib /usr/local/lib; do
+    [ -d "$libdir" ] && extra="${extra:+$extra:}$libdir"
+  done
+  if [ -n "$extra" ]; then
+    export DYLD_FALLBACK_LIBRARY_PATH="${DYLD_FALLBACK_LIBRARY_PATH:+$DYLD_FALLBACK_LIBRARY_PATH:}$extra:$HOME/lib:/usr/local/lib:/usr/lib"
+  fi
+fi
+
+PYTHON="$(find_python)"
+[ -n "$PYTHON" ] || die "no python3 interpreter found"
+
+exec "$PYTHON" "$ENTRY" "$@"
