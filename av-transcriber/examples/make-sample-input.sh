@@ -11,6 +11,10 @@
 #
 # macOS only: uses `say` for text-to-speech. On Linux, substitute espeak-ng or
 # piper and keep the rest of the pipeline identical.
+#
+# Copyright (C) 2026 Patrick R. Wallace, Hamilton College.
+# License GPLv3+: GNU GPL version 3 or later. There is NO WARRANTY.
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 set -euo pipefail
 

@@ -1,0 +1,77 @@
+av-transcriber -- licensing summary
+===================================
+
+Copyright (C) 2026 Patrick R. Wallace, Hamilton College.
+
+This project is distributed under two licenses, one for the software and one
+for the documentation.
+
+
+SOFTWARE
+--------
+
+av_transcriber.py, bin/av-transcribe, examples/make-sample-input.sh, and
+examples/make-sample-output.sh are free software: you can redistribute them
+and/or modify them under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+The full text is in COPYING. If it is missing, see
+<https://www.gnu.org/licenses/>.
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+
+DOCUMENTATION
+-------------
+
+README.txt, README.md, and examples/README.txt may be copied, distributed
+and/or modified under the terms of the GNU Free Documentation License,
+Version 1.3 or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+
+The full text is in COPYING.DOC. If it is missing, see
+<https://www.gnu.org/licenses/fdl-1.3.html>.
+
+SPDX-License-Identifier: GFDL-1.3-or-later
+
+The GFDL recommends that nontrivial program code appearing in documentation
+be released in parallel under a free software license. The command lines and
+code fragments quoted in the documentation are therefore also available under
+the GPL, version 3 or later, at your option.
+
+
+EXAMPLE MATERIAL
+----------------
+
+examples/sample-script.txt and the audio synthesized from it
+(examples/2026-03-14_Quarterly-Planning-Review.m4a), together with the
+transcripts under examples/output/, are released under the same terms as the
+documentation: GNU Free Documentation License, Version 1.3 or later, with no
+Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+
+The sample is synthesized speech from a script written for this project. It
+records no real person and no real meeting.
+
+
+THIRD-PARTY COMPONENTS
+----------------------
+
+av-transcriber does not bundle or link any of the following; it invokes them
+at runtime. Their terms apply to your own installation, not to this source
+tree.
+
+  openai-whisper     MIT
+  PyTorch            BSD-3-Clause
+  whisper.cpp        MIT
+  ffmpeg / ffprobe   LGPL-2.1-or-later, or GPL-2.0-or-later depending on how
+                     the build was configured. ffmpeg is invoked as a separate
+                     process, not linked.
+  static-ffmpeg      Ships prebuilt ffmpeg binaries; see that package for the
+                     terms of the specific build it installs.
+  WeasyPrint         BSD-3-Clause (optional, only for --pdf)

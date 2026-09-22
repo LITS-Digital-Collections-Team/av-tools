@@ -16,6 +16,23 @@ Pipeline
 Usable as a CLI or as a library (`from av_transcriber import transcribe_file`).
 """
 
+# Copyright (C) 2026 Patrick R. Wallace, Hamilton College.
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from __future__ import annotations
 
 import argparse
@@ -35,6 +52,14 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 __version__ = "1.0.0"
+__copyright__ = "Copyright (C) 2026 Patrick R. Wallace, Hamilton College"
+__license__ = "GPL-3.0-or-later"
+
+VERSION_BANNER = f"""av-transcribe {__version__}
+{__copyright__}
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."""
 
 # Whisper works from 16 kHz mono; producing that up front avoids a second
 # resample and keeps the intermediate WAV small (~115 MB/hour).
@@ -1024,7 +1049,7 @@ def build_parser() -> argparse.ArgumentParser:
     o.add_argument("--timestamps", action="store_true", help="prefix timestamps in .txt")
     o.add_argument("--overwrite", action="store_true", help="replace existing output files")
     o.add_argument("-q", "--quiet", action="store_true")
-    o.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    o.add_argument("--version", action="version", version=VERSION_BANNER)
     return p
 
 

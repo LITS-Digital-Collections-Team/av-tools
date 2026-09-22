@@ -3,6 +3,10 @@
 #
 # Run this after changing anything that affects rendering, so the committed
 # examples never drift from what the tool actually produces.
+#
+# Copyright (C) 2026 Patrick R. Wallace, Hamilton College.
+# License GPLv3+: GNU GPL version 3 or later. There is NO WARRANTY.
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 set -euo pipefail
 
